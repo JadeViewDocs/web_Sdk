@@ -1,6 +1,6 @@
 {
   "name": "jadeview-ipc-types",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "TypeScript type definitions for JadeView IPC system",
   "main": "index.d.ts",
   "types": "index.d.ts",
@@ -13,6 +13,10 @@
     "typescript",
     "types"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JadeViewDocs/web_Sdk.git"
+  },
   "author": "",
   "license": "MIT",
   "devDependencies": {
