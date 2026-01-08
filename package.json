@@ -1,0 +1,21 @@
+{
+  "name": "jadeview-ipc-types",
+  "version": "1.0.0",
+  "description": "TypeScript type definitions for JadeView IPC system",
+  "main": "index.d.ts",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "jadeview",
+    "ipc",
+    "typescript",
+    "types"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
