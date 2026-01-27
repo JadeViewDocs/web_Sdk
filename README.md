@@ -14,17 +14,52 @@ npm install --save-dev jadeview-ipc-types
 
 The type definitions will be automatically recognized by TypeScript when you install the package. You can then use the `window.jade` object with full type safety and IntelliSense.
 
+#### 1. Call Backend API
+
 ```typescript
-// Subscribe to a message type
-const callbackId = window.jade?.ipcMain('messageType', (content) => {
-  console.log('Received message:', content);
+// Call backend API and get result
+async function sendMessage() {
+  try {
+    const messageData = {
+      timestamp: Date.now(),
+      data: '测试消息',
+    };
+    const result = await window.jade?.invoke('message', messageData);
+    console.log('Backend return result:', result);
+  } catch (error) {
+    console.error('Call failed:', error);
+  }
+}
+
+// Set window backdrop
+async function setBackdrop(backdropType: string) {
+  try {
+    await window.jade?.invoke('setBackdrop', backdropType);
+    console.log('Backdrop set successfully:', backdropType);
+  } catch (error) {
+    console.error('Set backdrop failed:', error);
+  }
+}
+```
+
+#### 2. Subscribe to Events
+
+```typescript
+// Subscribe to theme change events
+const unsubscribeTheme = window.jade?.on('setTheme', (payload) => {
+  console.log('Theme change event:', payload);
+  // Handle theme change logic
 });
 
-// Send a message
-window.jade?.ipcSend('channelName', JSON.stringify({ key: 'value' }));
+// Subscribe to window state change events
+const unsubscribeWindowState = window.jade?.on('window-state-changed', (payload) => {
+  console.log('Window state changed:', payload);
+  // Handle window state change logic
+});
 
-// Unsubscribe from a message type
-window.jade?.ipcRemove('messageType', callbackId);
+// Unsubscribe when done
+// unsubscribeTheme();
+// unsubscribeWindowState();
 ```
 
 ### Importing Types
@@ -32,70 +67,52 @@ window.jade?.ipcRemove('messageType', callbackId);
 You can also import specific types if needed:
 
 ```typescript
-import type { JadeView, JadeViewMessage, JadeViewCallback } from 'jadeview-ipc-types';
+import type { JadeView } from 'jadeview-ipc-types';
 
 // Use the imported types
-const handleMessage = (message: JadeViewMessage) => {
-  console.log('Message type:', message.type);
-  console.log('Message content:', message.content);
+const handleInvoke = async () => {
+  const jadeInstance = window.jade as JadeView;
+  if (jadeInstance) {
+    const result = await jadeInstance.invoke('testCommand', { key: 'value' });
+    console.log('Invoke result:', result);
+  }
 };
 ```
 
 ## API Documentation
 
-### `window.jade.ipcMain(type, callback)`
+### `window.jade.invoke(command, payload)`
 
-Subscribe to a message type.
+Call backend API and get return result.
 
 - **Parameters**:
-  - `type`: `string` - The message type to subscribe to
-  - `callback`: `(content: string) => void` - The callback function to be called when a message of the specified type is received
+  - `command`: `string` - Backend command name to call
+  - `payload`: `any` - Data to pass to backend (optional)
 
 - **Returns**:
-  - `number` - A callback ID that can be used to unsubscribe
+  - `Promise<T>` - Promise with backend return result
 
-### `window.jade.ipcRemove(type, callbackId)`
+### `window.jade.on(eventName, callback)`
 
-Unsubscribe from a message type.
+Subscribe to backend events.
 
 - **Parameters**:
-  - `type`: `string` - The message type to unsubscribe from
-  - `callbackId`: `number` - The callback ID returned by `ipcMain`
+  - `eventName`: `string` - Event name to listen for
+  - `callback`: `(payload: any) => void` - Callback function to call when event is triggered
 
 - **Returns**:
-  - `boolean` - Whether the callback was successfully removed
-
-### `window.jade.ipcSend(channel, content)`
-
-Send a message to the native side.
-
-- **Parameters**:
-  - `channel`: `string` - The channel name to send the message on
-  - `content`: `string` - The content of the message (must be a string)
+  - `() => void` - Unsubscribe function
 
 ## Type Definitions
 
 ### `JadeView`
 
-The main JadeView interface representing the `window.jade` object.
+The main JadeView interface representing the `window.jade` object:
 
-### `JadeViewMessage`
-
-Interface representing a JadeView message:
 ```typescript
-interface JadeViewMessage {
-  type: string;
-  content: string;
-}
-```
-
-### `JadeViewCallback`
-
-Interface representing a JadeView callback function:
-```typescript
-interface JadeViewCallback {
-  (content: string): void;
-  _jadeCallbackId: number;
+interface JadeView {
+  invoke: <T = any>(command: string, payload?: any) => Promise<T>;
+  on: (eventName: string, callback: (payload: any) => void) => () => void;
 }
 ```
 

@@ -5,63 +5,26 @@
 declare global {
   interface Window {
     jade?: JadeView;
-    Jade?: {
-      ipc?: {
-        postMessage?: (message: string) => void;
-        onMessage?: (message: JadeViewMessage) => void;
-      };
-    };
-    ipc?: {
-      postMessage?: (message: string) => void;
-    };
   }
 }
 
-// JadeView message type
-export interface JadeViewMessage {
-  type: string;
-  content: string;
-}
-
-// JadeView callback type
-export type JadeViewCallback = ((content: string) => void) & {
-  _jadeCallbackId: number;
-}; 
 // JadeView main interface
 export interface JadeView {
   /**
-   * IPC main method for subscribing to message types
-   * @param type - Message type to subscribe to
-   * @param callback - Callback function to be called when message is received
-   * @returns Callback ID for unsubscribing
+   * Call backend API and get return result
+   * @param command - Backend command name to call
+   * @param payload - Data to pass to backend (optional)
+   * @returns Promise with backend return result
    */
-  ipcMain: (type: string, callback: (content: string) => void) => number;
+  invoke: <T = any>(command: string, payload?: any) => Promise<T>;
   
   /**
-   * Remove IPC subscription by type and callback ID
-   * @param type - Message type to unsubscribe from
-   * @param callbackId - Callback ID returned by ipcMain
-   * @returns Whether the callback was successfully removed
+   * Subscribe to backend events
+   * @param eventName - Event name to listen for
+   * @param callback - Callback function to call when event is triggered
+   * @returns Unsubscribe function
    */
-  ipcRemove: (type: string, callbackId: number) => boolean;
-  
-  /**
-   * Send IPC message to the native side
-   * @param channel - Channel name to send message on
-   * @param content - Content of the message (must be a string)
-   */
-  ipcSend: (channel: string, content: string) => void;
-  
-  /**
-   * Internal callback registry (do not use directly)
-   */
-  _callbacks?: Map<string, JadeViewCallback[]>;
-  
-  /**
-   * Internal message handler (do not use directly)
-   * @param msg - Message object to handle
-   */
-  _handleMessage?: (msg: JadeViewMessage) => void;
+  on: (eventName: string, callback: (payload: any) => void) => () => void;
 }
 
 // Export as default for convenience
