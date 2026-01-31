@@ -62,12 +62,98 @@ const unsubscribeWindowState = window.jade?.on('window-state-changed', (payload)
 // unsubscribeWindowState();
 ```
 
+#### 3. Use Dialog API
+
+```typescript
+// Open file dialog
+async function openFile() {
+  try {
+    const result = await window.jade?.dialog.showOpenDialog({
+      title: '选择文件',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'Text Files', extensions: ['txt', 'md'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+
+    if (!result?.canceled) {
+      console.log('Selected files:', result.filePaths);
+    }
+  } catch (error) {
+    console.error('Open file dialog failed:', error);
+  }
+}
+
+// Save file dialog
+async function saveFile() {
+  try {
+    const result = await window.jade?.dialog.showSaveDialog({
+      title: '保存文件',
+      defaultPath: 'document.txt',
+      filters: [
+        { name: 'Text File', extensions: ['txt'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+
+    if (!result?.canceled) {
+      console.log('Save path:', result.filePath);
+    }
+  } catch (error) {
+    console.error('Save file dialog failed:', error);
+  }
+}
+
+// Show message box
+async function showConfirm() {
+  try {
+    const result = await window.jade?.dialog.showMessageBox({
+      title: '确认操作',
+      message: '确定要删除此文件吗？',
+      detail: '此操作不可撤销',
+      buttons: ['删除', '取消'],
+      defaultId: 1,
+      cancelId: 1,
+      type: 'warning'
+    });
+
+    if (result?.response === 0) {
+      console.log('User confirmed deletion');
+    } else {
+      console.log('User canceled deletion');
+    }
+  } catch (error) {
+    console.error('Show message box failed:', error);
+  }
+}
+
+// Show error box
+async function showError() {
+  try {
+    await window.jade?.dialog.showErrorBox('错误', '操作失败，请重试');
+    console.log('Error box closed');
+  } catch (error) {
+    console.error('Show error box failed:', error);
+  }
+}
+```
+
 ### Importing Types
 
 You can also import specific types if needed:
 
 ```typescript
-import type { JadeView } from 'jadeview-ipc-types';
+import type {
+  JadeView,
+  DialogAPI,
+  OpenDialogOptions,
+  SaveDialogOptions,
+  MessageBoxOptions,
+  FileFilter,
+  DialogProperty,
+  MessageBoxType
+} from 'jadeview-ipc-types';
 
 // Use the imported types
 const handleInvoke = async () => {
@@ -76,6 +162,16 @@ const handleInvoke = async () => {
     const result = await jadeInstance.invoke('testCommand', { key: 'value' });
     console.log('Invoke result:', result);
   }
+};
+
+// Define dialog options with type safety
+const openDialogOptions: OpenDialogOptions = {
+  title: '选择图片',
+  properties: ['openFile', 'multiSelections'],
+  filters: [
+    { name: 'Images', extensions: ['jpg', 'png', 'gif'] },
+    { name: 'All Files', extensions: ['*'] }
+  ]
 };
 ```
 
@@ -103,6 +199,51 @@ Subscribe to backend events.
 - **Returns**:
   - `() => void` - Unsubscribe function
 
+### `window.jade.dialog`
+
+Dialog API for showing native dialogs.
+
+#### `window.jade.dialog.showOpenDialog(options)`
+
+Show open file dialog for selecting files.
+
+- **Parameters**:
+  - `options`: `OpenDialogOptions` - Dialog options
+
+- **Returns**:
+  - `Promise<OpenDialogResult>` - Dialog result
+
+#### `window.jade.dialog.showSaveDialog(options)`
+
+Show save file dialog for selecting save location.
+
+- **Parameters**:
+  - `options`: `SaveDialogOptions` - Dialog options
+
+- **Returns**:
+  - `Promise<SaveDialogResult>` - Dialog result
+
+#### `window.jade.dialog.showMessageBox(options)`
+
+Show message box for displaying information or getting user input.
+
+- **Parameters**:
+  - `options`: `MessageBoxOptions` - Message box options
+
+- **Returns**:
+  - `Promise<MessageBoxResult>` - Message box result
+
+#### `window.jade.dialog.showErrorBox(title, content)`
+
+Show error box for displaying error messages.
+
+- **Parameters**:
+  - `title`: `string` - Error box title
+  - `content`: `string` - Error message content
+
+- **Returns**:
+  - `Promise<void>` - Promise
+
 ## Type Definitions
 
 ### `JadeView`
@@ -113,6 +254,71 @@ The main JadeView interface representing the `window.jade` object:
 interface JadeView {
   invoke: <T = any>(command: string, payload?: any) => Promise<T>;
   on: (eventName: string, callback: (payload: any) => void) => () => void;
+  dialog: DialogAPI;
+  off?: <T = any>(event: string, listener: (payload: T) => void) => void;
+}
+```
+
+### Dialog Types
+
+```typescript
+// Dialog options
+interface DialogOptions {
+  title?: string;
+  defaultPath?: string;
+  buttonLabel?: string;
+  filters?: FileFilter[];
+  properties?: DialogProperty[];
+  blocking?: boolean;
+}
+
+// File filter
+interface FileFilter {
+  name: string;
+  extensions: string[];
+}
+
+// Dialog property
+ type DialogProperty =
+  | 'openFile'
+  | 'openDirectory'
+  | 'multiSelections'
+  | 'showHiddenFiles'
+  | 'createDirectory'
+  | 'promptToCreate'
+  | 'noResolveAliases'
+  | 'treatPackageAsDirectory';
+
+// Message box type
+type MessageBoxType = 'none' | 'info' | 'error' | 'warning' | 'question';
+```
+
+### Event Types
+
+```typescript
+// Event names
+type EventName =
+  | 'window-state-changed'
+  | 'notification-action'
+  | 'toast-dismissed'
+  | 'toast-failed'
+  | 'dialog-open-file-completed'
+  | 'dialog-save-file-completed'
+  | 'dialog-message-box-completed'
+  | 'dialog-error-box-completed'
+  | string;
+
+// Window state changed event
+interface WindowStateChangedEvent {
+  isMaximized: boolean;
+}
+
+// Dialog completed event
+interface DialogCompletedEvent {
+  canceled: boolean;
+  filePaths?: string[];
+  filePath?: string;
+  response?: number;
 }
 ```
 
@@ -122,6 +328,7 @@ interface JadeView {
 - The implementation is provided by the internal WebView environment
 - Ensure that the JadeView IPC system is initialized before using these methods
 - The `window.jade` object may be undefined in some environments, so always use optional chaining (`?.`) when accessing it
+- Dialog API methods return Promises, so use async/await or .then() for proper handling
 
 ## License
 
